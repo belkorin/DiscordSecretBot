@@ -23,7 +23,7 @@ namespace bottest
             _client = new DiscordSocketClient();
             _database = new Database();
 
-            var token = "NzAyNTg5MzI3NDM1MTA0MjY3.XqCXdA.5cqksauDoYVpON_s2eKDhUU5oqE";
+            var token = Environment.GetEnvironmentVariable("TwitchToken");
 
             await _client.LoginAsync(TokenType.Bot, token);
             await _client.StartAsync();
