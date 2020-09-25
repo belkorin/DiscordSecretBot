@@ -16,7 +16,10 @@ namespace bottest
         DiscordSocketClient _client;
         Database _database;
 
+        const ulong _developerID = 702608129837498458;
+
         Dictionary<ulong, MessageInfo> _pendingMessages = new Dictionary<ulong, MessageInfo>();
+
 
         public async Task BotAsync()
         {
@@ -38,7 +41,7 @@ namespace bottest
         {
             //Ignores all bots messages
             //Where message is your received SocketMessage
-            if (msg.Author.IsBot) 
+            if (msg.Author.IsBot)
                 return;
 
             if (!(msg.Channel is IDMChannel))
@@ -55,13 +58,27 @@ namespace bottest
             if (info.ErrorMessage != null)
             {
                 await msg.Channel.SendMessageAsync(info.ErrorMessage);
+                await msg.Channel.SendMessageAsync("If you think this isn't right, you can send an anonymous message to the developer by sending `report ` followed by a description of your problem.");
                 return;
             }
 
-            if(info.IsCommand)
+            if (info.IsCommand)
             {
                 string message = AdminCommandProcessor.ProcessCommand(info, _database, _client);
                 await msg.Channel.SendMessageAsync(message);
+
+                return;
+            }
+            else if (info.IsReportIssue)
+            {
+                var channel = _client.GetChannel(_developerID) as SocketDMChannel;
+                await channel.SendMessageAsync($"issue report: {info.SecretMessage}");
+
+                return;
+            }
+            else if (info.IsGetHelp)
+            {
+                await msg.Channel.SendMessageAsync("To send a secret message, send `send ` followed by your secret message. \r\n\r\n If you think this bot isn't functioning correctly, you can send an anonymous message to the developer by sending `report ` followed by a description of your problem.");
 
                 return;
             }
@@ -71,15 +88,29 @@ namespace bottest
 
         MessageInfo ParseMessage(SocketMessage msg)
         {
-            bool isCommand = msg.Content.StartsWith("!");
-            bool isSendSecret = msg.Content.StartsWith("send ", StringComparison.InvariantCultureIgnoreCase);
-            bool hasPending = _pendingMessages.TryGetValue(msg.Author.Id, out var storedMessage);
+            var msgWithoutBang = msg.Content.TrimStart('!');
 
-            if (!isSendSecret && !isCommand && !hasPending)
-                return null;
+            bool isReportProblem = msgWithoutBang.StartsWith("report ");
+            bool isGetHelp = msgWithoutBang.StartsWith("help");
+
+            bool isSendSecret = msgWithoutBang.StartsWith("send ", StringComparison.InvariantCultureIgnoreCase);
+            bool isCommand = !isReportProblem && !isGetHelp && !isSendSecret && msg.Content.StartsWith("!");
+            bool hasPending = _pendingMessages.TryGetValue(msg.Author.Id, out var storedMessage);
 
             var info = new MessageInfo();
             info.Content = msg.Content;
+            
+            if (!isSendSecret && !isCommand && !hasPending && !isReportProblem && !isGetHelp)
+            {
+                info.ErrorMessage = "That's not something this bot knows how to do. If you need help, send `help` to get info on how to use this bot.";
+                return info;
+            }
+
+            info.IsReportIssue = isReportProblem;
+            info.IsGetHelp = isGetHelp;
+
+            if (isGetHelp)
+                return info;
 
             string embedsMessage = CheckForEmbeds(msg);
 
@@ -89,10 +120,11 @@ namespace bottest
                 return info;
             }
 
-            bool isError = findServer(msg.Author, storedMessage, ref info, isCommand);
+            bool isError = !isReportProblem && findServer(msg.Author, storedMessage, ref info, isCommand);
 
             if (isError)
                 return info;
+
 
             if (isCommand)
                 isError = ParseCommand(info);
@@ -172,21 +204,27 @@ namespace bottest
         /// <summary></summary>
         /// <returns>True on error</returns>
         const int prefixLength = 5;
+        const int prefixReportLength = 7;
         bool ParseNonCommand(SocketUser author, MessageInfo info)
         {
-            if(IsUserBanned(author, info.Guild.Id))
+            if(!info.IsReportIssue && IsUserBanned(author, info.Guild.Id))
             {
                 info.UserIsBanned = true;
                 return true;
             }
 
-            if(UserIsInValidRole(author, info.Guild.Id))
+            if(!info.IsReportIssue && UserIsInValidRole(author, info.Guild.Id))
             {
                 info.ErrorMessage = $"sorry, the owner of {info.Guild.Name} has restricted access to this bot";
                 return true;
             }
 
-            info.SecretMessage = info.Content.Substring(prefixLength);
+            var substringLength = info.IsReportIssue ? prefixReportLength : prefixLength;
+
+            info.SecretMessage = info.Content.TrimStart('!').Substring(substringLength);
+
+            if (info.IsReportIssue)
+                return false;
 
             var channelName = _database.GetChannel(info.Guild.Id);
 
@@ -300,6 +338,8 @@ namespace bottest
             public string Command { get; set; }
             public string CommandValue { get; set; }
             public bool UserIsBanned { get; set; }
+            public bool IsGetHelp { get; set; }
+            public bool IsReportIssue { get; set; }
 
             public string Content { get; set; }
         }
