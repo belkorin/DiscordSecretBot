@@ -33,8 +33,6 @@ namespace bottest
 
             var token = Environment.GetEnvironmentVariable("TwitchToken");
 
-            token = token ?? "NzAyNTg5MzI3NDM1MTA0MjY3.XqCPTQ.nlnPFCrNp7zYIk6-ki-lIIIXQy0";
-
             await _client.LoginAsync(TokenType.Bot, token);
             await _client.StartAsync();
 
