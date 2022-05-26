@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -30,8 +31,13 @@ namespace bottest
         static void LaunchBot()
         {
             var bot = new DiscordBot();
-            TheBot = bot.BotAsync();
-            TheBot.ContinueWith(x => LaunchBot());
+            while (true)
+            {
+                TheBot = bot.BotAsync();
+                TheBot.Wait();
+
+                Thread.Sleep(5 * 60 * 1000);
+            }
         }
     }
 }

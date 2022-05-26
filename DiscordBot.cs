@@ -4,6 +4,7 @@ using Microsoft.VisualBasic;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -15,6 +16,7 @@ namespace bottest
     {
         DiscordSocketClient _client;
         Database _database;
+        bool _connected = false;
 
         const ulong _developerID = 702608129837498458;
 
@@ -23,10 +25,15 @@ namespace bottest
 
         public async Task BotAsync()
         {
-            _client = new DiscordSocketClient();
+            _client = new DiscordSocketClient(new DiscordSocketConfig { LogLevel = LogSeverity.Verbose, AlwaysDownloadUsers = true, DefaultRetryMode = RetryMode.Retry502 | RetryMode.RetryTimeouts });
             _database = new Database();
+            _client.Log += _client_Log;
+           // _client.Connected += _client_Connected;
+            //_client.GuildAvailable += _client_GuildAvailable;
 
             var token = Environment.GetEnvironmentVariable("TwitchToken");
+
+            token = token ?? "NzAyNTg5MzI3NDM1MTA0MjY3.XqCPTQ.nlnPFCrNp7zYIk6-ki-lIIIXQy0";
 
             await _client.LoginAsync(TokenType.Bot, token);
             await _client.StartAsync();
@@ -35,6 +42,22 @@ namespace bottest
 
             // Block this task until the program is closed.
             await Task.Delay(-1);
+        }
+
+        private async Task _client_GuildAvailable(SocketGuild arg)
+        {
+            await _client.DownloadUsersAsync(new[] { arg });
+            await arg.DownloaderPromise;
+        }
+
+        private async Task _client_Connected()
+        {
+            _connected = true;
+        }
+
+        private async Task _client_Log(LogMessage arg)
+        {
+            Console.WriteLine(arg.ToString());
         }
 
         private async Task MessageReceived(SocketMessage msg)
@@ -245,7 +268,7 @@ namespace bottest
         /// <returns>True on error</returns>
         bool FindServerCore(SocketUser author, MessageInfo info, IReadOnlyCollection<SocketGuild> guilds, bool isCommand)
         {
-            string memberOwnerString = isCommand ? "a member" : "an owner";
+            string memberOwnerString = !isCommand ? "a member" : "an owner";
             string messageOrCommand = isCommand ? "command" : "secret message";
             //string commandInfoString = isCommand ? "!<command> srv=\"<server name>\" <command values>" : "send_server \"<server name>\" <message>";
 
