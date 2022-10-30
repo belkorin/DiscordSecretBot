@@ -56,6 +56,8 @@ namespace DiscordSecretBot
                 var result = await _interactionService.ExecuteCommandAsync(ctx, _services);
             };
 
+            await _client.SetActivityAsync(new Game("Send an anonymous message with /secret", ActivityType.CustomStatus, ActivityProperties.None));
+
             // Block this task until the program is closed.
             await Task.Delay(-1);
         }
