@@ -1,43 +1,55 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Hosting;
+﻿using Discord;
+using Discord.Interactions;
+using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection;
 
-namespace bottest
+namespace DiscordSecretBot
 {
-    public class Program
+    internal class Program
     {
-        public static Task TheBot;
-
-        public static void Main(string[] args)
+        public static Task Main(string[] args) => new Program().MainAsync();
+        public async Task MainAsync()
         {
-            LaunchBot();
+            // Create service collection and configure our services
+            var services = ConfigureServices();
+            // Generate a provider
+            var serviceProvider = services.BuildServiceProvider();
 
-            CreateHostBuilder(args).Build().Run();
+            // Kick off our actual code
+            await serviceProvider.GetService<Bot>()!.Run();
         }
 
-        public static IHostBuilder CreateHostBuilder(string[] args) =>
-            Host.CreateDefaultBuilder(args)
-                .ConfigureWebHostDefaults(webBuilder =>
-                {
-                    webBuilder.UseStartup<Startup>();
-                });
-
-        static void LaunchBot()
+        IServiceCollection ConfigureServices()
         {
-            var bot = new DiscordBot();
-            while (true)
-            {
-                TheBot = bot.BotAsync();
-                TheBot.Wait();
+            IConfiguration config = new ConfigurationBuilder()
+                .AddUserSecrets<Program>()
+                .AddEnvironmentVariables()
+                .Build();
 
-                Thread.Sleep(5 * 60 * 1000);
-            }
+            var discordConfig = new DiscordSocketConfig()
+            {
+                AlwaysDownloadUsers = true,
+                MaxWaitBetweenGuildAvailablesBeforeReady = 1000,
+            };
+
+            var servConfig = new InteractionServiceConfig()
+            {
+
+            };
+
+            IServiceCollection services = new ServiceCollection();
+
+            services.AddSingleton(config);
+            services.AddSingleton<DiscordSocketClient>();
+            services.AddSingleton(discordConfig);
+            services.AddSingleton(servConfig);
+            services.AddSingleton<InteractionService>();
+            services.AddSingleton<Database>();
+            services.AddSingleton<OldDMBasedHandling>();
+            services.AddTransient<Bot>();
+
+            return services;
         }
     }
 }
