@@ -31,6 +31,7 @@ namespace DiscordSecretBot
             {
                 AlwaysDownloadUsers = true,
                 MaxWaitBetweenGuildAvailablesBeforeReady = 1000,
+                GatewayIntents = GatewayIntents.GuildMembers | GatewayIntents.AllUnprivileged | GatewayIntents.DirectMessages
             };
 
             var servConfig = new InteractionServiceConfig()

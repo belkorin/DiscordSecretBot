@@ -55,7 +55,8 @@ namespace DiscordSecretBot
             }
             else if (info.IsReportIssue)
             {
-                var channel = (SocketDMChannel)_client.GetChannel(Bot.DeveloperID);
+                var dev = await _client.GetUserAsync(Bot.DeveloperID);
+                var channel = await dev.CreateDMChannelAsync();
                 await channel.SendMessageAsync($"issue report: {info.SecretMessage}");
 
                 return;

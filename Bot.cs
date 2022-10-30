@@ -14,7 +14,7 @@ namespace DiscordSecretBot
 {
     internal class Bot
     {
-        public const ulong DeveloperID = 702608129837498458;
+        public const ulong DeveloperID = 178613848176197632;
         DiscordSocketClient _client;
         IConfiguration _config;
         InteractionService _interactionService;
@@ -72,7 +72,8 @@ namespace DiscordSecretBot
 
             if (modal.Data.CustomId == SecretMessagesModule.ReportProblemModal)
             {
-                var channel = (SocketDMChannel)_client.GetChannel(DeveloperID);
+                var dev = await _client.GetUserAsync(DeveloperID);
+                var channel = await dev.CreateDMChannelAsync();
                 await channel.SendMessageAsync($"issue report: {message}");
                 await modal.RespondAsync("message sent", ephemeral: true);
             }
