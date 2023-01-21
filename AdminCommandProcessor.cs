@@ -1,17 +1,17 @@
-﻿using Discord.WebSocket;
+﻿
+using Discord.WebSocket;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using static bottest.DiscordBot;
 
-namespace bottest
+namespace DiscordSecretBot
 {
-    public class AdminCommandProcessor
+    internal class AdminCommandProcessor
     {
-        public static string ProcessCommand(MessageInfo info, Database database, DiscordSocketClient client)
+        public static string ProcessCommand(OldDMBasedHandling.MessageInfo info, Database database, DiscordSocketClient client)
         {
             var commandValue = Regex.Matches(info.CommandValue, "\"([^\"]*)\"").FirstOrDefault()?.Groups[1].Value;
             ulong? roleId = null;
@@ -51,7 +51,7 @@ List banned users: `!bans`";
 
                     StringBuilder sb = new StringBuilder();
                     var guild = client.GetGuild(info.Guild.Id);
-                    foreach(var r in roleIds)
+                    foreach (var r in roleIds)
                         sb.AppendLine(guild.GetRole(r).Name);
 
 
@@ -88,13 +88,13 @@ List banned users: `!bans`";
             }
         }
 
-        static ulong? GetRoleId(MessageInfo info, DiscordSocketClient client, string roleName)
+        static ulong? GetRoleId(OldDMBasedHandling.MessageInfo info, DiscordSocketClient client, string roleName)
         {
             var role = client.GetGuild(info.Guild.Id).Roles.FirstOrDefault(x => x.Name.Equals(roleName, StringComparison.InvariantCultureIgnoreCase));
 
             return role?.Id;
         }
-        static ulong? GetUserId(MessageInfo info, DiscordSocketClient client, string userName)
+        static ulong? GetUserId(OldDMBasedHandling.MessageInfo info, DiscordSocketClient client, string userName)
         {
             var user = client.GetGuild(info.Guild.Id).Users.FirstOrDefault(x => x.ToString().Equals(userName, StringComparison.InvariantCultureIgnoreCase));
 

@@ -5,7 +5,7 @@ using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace bottest
+namespace DiscordSecretBot
 {
     public class Database
     {
@@ -38,7 +38,7 @@ namespace bottest
 
         public IEnumerable<ulong> GetValidRoles(ulong guildId)
         {
-            using(var connection = new SqliteConnection(_connStr.ConnectionString))
+            using (var connection = new SqliteConnection(_connStr.ConnectionString))
             {
                 connection.Open();
 
